@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>whatsCooking AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #e07b2a;
+      --primary-dark: #c4671e;
+      --surface: #fdf8f5;
+      --surface-container: #f2ede9;
+      --on-surface: #1c1b19;
+      --text-muted: #7a746c;
+      --border: #e0d8ce;
+      --white: #ffffff;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Hanken Grotesk', sans-serif;
+      background: var(--surface);
+      color: var(--on-surface);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    nav {
+      background: #111110;
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 10;
+    }
+
+    nav .logo {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: 0.5px;
+    }
+
+    nav .logo span {
+      color: var(--primary);
+    }
+
+    nav .tag {
+      font-size: 1rem;
+      color: var(--text-muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 24px;
+      position: relative;
+      z-index: 5;
+    }
+
+    .hero {
+      margin-bottom: 48px;
+    }
+
+    .hero h1 {
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: var(--on-surface);
+      line-height: 1.1;
+      margin-bottom: 12px;
+      letter-spacing: -0.03em;
+    }
+
+    .hero h1 span {
+      color: var(--primary);
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 600px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.04),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+      transition: transform 0.3s ease;
+    }
+
+    .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .upload-zone:hover {
+      border-color: var(--primary);
+      background: rgba(224, 123, 42, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .upload-zone .upload-text {
+      font-size: 1rem;
+      color: var(--text-muted);
+    }
+
+    .upload-zone .upload-text strong {
+      color: var(--primary);
+    }
+
+    .status-pill {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background: #f4dfcb;
+      color: #723600;
+      display: none;
+    }
+
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--on-surface);
+      background: rgba(255, 255, 255, 0.9);
+      resize: none;
+      outline: none;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+    }
+
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(224, 123, 42, 0.1);
+    }
+
+    button {
+      background: var(--primary);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius);
+      padding: 16px 32px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      width: 100%;
+      font-family: 'Hanken Grotesk', sans-serif;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(224, 123, 42, 0.3);
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button:disabled {
+      background: var(--border);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    #dishes-section {
+      display: none;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 40px 0;
+      opacity: 0.5;
+    }
+
+    .dish-item {
+      border: 1px solid rgba(224, 216, 206, 0.6);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
+    }
+
+    .dish-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 24px;
+      cursor: pointer;
+      background: transparent;
+      transition: background 0.2s;
+      user-select: none;
+    }
+
+    .dish-header.open {
+      background: rgba(244, 223, 203, 0.5);
+    }
+
+    .dish-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--on-surface);
+    }
+
+    .chevron {
+      width: 10px;
+      height: 10px;
+      border-right: 2px solid var(--text-muted);
+      border-bottom: 2px solid var(--text-muted);
+      transform: rotate(45deg);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
+    }
+
+    .dish-header.open .chevron {
+      transform: rotate(-135deg);
+      border-color: var(--primary);
+    }
+
+    .dish-body {
+      display: none;
+      padding: 24px;
+      border-top: 1px solid rgba(224, 216, 206, 0.6);
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .dish-body.open {
+      display: block;
+    }
+
+    .dish-body p {
+      font-size: 0.93rem;
+      line-height: 1.75;
+      color: var(--on-surface);
+      white-space: pre-wrap;
+    }
+
+    .loading-text {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--white);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero h1 {
+        font-size: 2.5rem;
+      }
+
+      main {
+        padding-top: 24px;
+      }
+
+      .card {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+
+  <nav>
+    <span></span>
+    <div class="tag">AbsolAI</div>
+  </nav>
+
+  <main>
+
+    <div class="hero">
+      <h1>WhatsCooking<span> AI</span></h1>
+      <p>Upload your recipe book, enter your ingredients, and find out what you can make.</p>
+    </div>
+
+    <!-- STEP 1: Upload -->
+    <div class="card">
+      <div class="card-title">Step 1 — Recipe Book</div>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="pdf-input" accept=".pdf" />
+        <div class="upload-text" id="upload-label">
+          <strong>Click to upload</strong> your recipe book PDF
+        </div>
+      </div>
+      <div class="status-pill" id="upload-status"></div>
+    </div>
+
+    <!-- STEP 2: Ingredients -->
+    <div class="card">
+      <div class="card-title">Step 2 — Your Ingredients</div>
+      <textarea id="ingredients" rows="3" placeholder="e.g. eggs, tomatoes, onion, garlic, olive oil..."></textarea>
+      <button id="find-btn" onclick="findDishes()">Find Dishes</button>
+    </div>
+
+    <hr />
+
+    <!-- RESULTS -->
+    <div id="dishes-section">
+      <div class="card-title" style="margin-bottom:14px;" id="dishes-count"></div>
+      <div id="dishes-list"></div>
+    </div>
+
+  </main>
+
+  <script>
+    // ── Canvas Background Animation ─────────────────────────
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let mouseX = 0, mouseY = 0;
+    let targetMouseX = 0, targetMouseY = 0;
+    let isVisible = true;
+
+    const colors = [
+      'rgba(230, 126, 34, 0.2)', // Warm Orange
+      'rgba(245, 176, 65, 0.2)', // Soft Amber
+      'rgba(106, 176, 76, 0.15)', // Herb Green
+      'rgba(162, 155, 254, 0.12)' // Soft Violet
+    ];
+
+    class Blob {
+      constructor() { this.init(); }
+      init() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.radius = Math.random() * 300 + 200;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.vx = (Math.random() - 0.5) * 0.4;
+        this.vy = (Math.random() - 0.5) * 0.4;
+        this.parallaxScale = Math.random() * 0.08 + 0.02;
+      }
+      draw() {
+        const px = (mouseX - width / 2) * this.parallaxScale;
+        const py = (mouseY - height / 2) * this.parallaxScale;
+        ctx.beginPath();
+        const gradient = ctx.createRadialGradient(
+          this.x + px, this.y + py, 0,
+          this.x + px, this.y + py, this.radius
+        );
+        gradient.addColorStop(0, this.color);
+        gradient.addColorStop(1, 'rgba(253, 248, 245, 0)');
+        ctx.fillStyle = gradient;
+        ctx.filter = 'blur(100px)';
+        ctx.arc(this.x + px, this.y + py, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.filter = 'none';
+      }
+      update() {
+        this.x += this.vx; this.y += this.vy;
+        if (this.x < -this.radius) this.x = width + this.radius;
+        if (this.x > width + this.radius) this.x = -this.radius;
+        if (this.y < -this.radius) this.y = height + this.radius;
+        if (this.y > height + this.radius) this.y = -this.radius;
+      }
+    }
+
+    class Particle {
+      constructor() { this.init(); }
+      init() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.size = Math.random() * 2 + 1;
+        this.opacity = Math.random() * 0.3 + 0.1;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(230, 126, 34, ${this.opacity})`;
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      update() {
+        this.x += this.vx; this.y += this.vy;
+        if (this.x < 0) this.x = width; if (this.x > width) this.x = 0;
+        if (this.y < 0) this.y = height; if (this.y > height) this.y = 0;
+      }
+    }
+
+    class Illustration {
+      constructor(type) {
+        this.type = type; // 0: Avocado, 1: Tomato, 2: Carrot, 3: Chili, 4: Basil, 5: Garlic, 6: Spoon/Knife, 7: Recipe Card
+        this.init();
+      }
+      init() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.size = Math.random() * 130 + 120;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rv = (Math.random() - 0.5) * 0.003;
+        this.vx = (Math.random() - 0.5) * 0.2;
+        this.vy = (Math.random() - 0.5) * 0.2;
+        this.parallaxScale = 0.03 + Math.random() * 0.06;
+        this.opacity = Math.random() * 0.07 + 0.08;
+      }
+      draw() {
+        const px = (mouseX - width / 2) * this.parallaxScale;
+        const py = (mouseY - height / 2) * this.parallaxScale;
+        ctx.save();
+        ctx.translate(this.x + px, this.y + py);
+        ctx.rotate(this.rotation);
+        ctx.strokeStyle = `rgba(28, 27, 25, ${this.opacity})`;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        const s = this.size;
+
+        if (this.type === 0) { // Avocado
+          ctx.moveTo(0, -s / 2.5);
+          ctx.bezierCurveTo(s / 3, -s / 2.5, s / 2, s / 4, 0, s / 2);
+          ctx.bezierCurveTo(-s / 2, s / 4, -s / 3, -s / 2.5, 0, -s / 2.5);
+          ctx.moveTo(0, s / 6); ctx.arc(0, s / 6, s / 6, 0, Math.PI * 2);
+        } else if (this.type === 1) { // Tomato
+          ctx.arc(0, 0, s / 3.5, 0, Math.PI * 2);
+          ctx.moveTo(0, -s / 3.5); ctx.lineTo(0, -s / 2.5);
+          ctx.lineTo(s / 10, -s / 2.2); ctx.moveTo(0, -s / 2.5); ctx.lineTo(-s / 10, -s / 2.2);
+        } else if (this.type === 2) { // Carrot
+          ctx.moveTo(-s / 8, -s / 2); ctx.lineTo(s / 8, -s / 2); ctx.lineTo(0, s / 2); ctx.closePath();
+          for (let i = 0; i < 3; i++) {
+            ctx.moveTo(-s / 10, -s / 4 + i * s / 4); ctx.lineTo(s / 10, -s / 4.5 + i * s / 4);
+          }
+        } else if (this.type === 3) { // Chili
+          ctx.moveTo(0, -s / 2); ctx.quadraticCurveTo(s / 2.5, 0, 0, s / 2);
+          ctx.quadraticCurveTo(s / 3, 0, -s / 10, -s / 2); ctx.closePath();
+        } else if (this.type === 4) { // Basil
+          for (let i = 0; i < 3; i++) {
+            ctx.save(); ctx.rotate(i * (Math.PI * 2 / 3));
+            ctx.moveTo(0, 0); ctx.bezierCurveTo(s / 4, -s / 4, s / 4, -s / 2, 0, -s / 2);
+            ctx.bezierCurveTo(-s / 4, -s / 2, -s / 4, -s / 4, 0, 0); ctx.restore();
+          }
+        } else if (this.type === 5) { // Garlic
+          ctx.moveTo(0, s / 2.5); ctx.bezierCurveTo(s / 2, s / 2.5, s / 2.5, -s / 5, 0, -s / 2);
+          ctx.bezierCurveTo(-s / 2.5, -s / 5, -s / 2, s / 2.5, 0, s / 2.5);
+          ctx.moveTo(0, s / 2.5); ctx.lineTo(0, -s / 2);
+        } else if (this.type === 6) { // Knife
+          ctx.rect(-s / 20, s / 4, s / 10, s / 4);
+          ctx.moveTo(-s / 20, s / 4); ctx.lineTo(-s / 20, -s / 2);
+          ctx.bezierCurveTo(s / 5, -s / 2, s / 5, s / 4, -s / 20, s / 4);
+        } else { // Recipe Card
+          ctx.rect(-s / 3, -s / 4, s / 1.5, s / 2);
+          for (let i = 0; i < 3; i++) {
+            ctx.moveTo(-s / 4, -s / 8 + i * s / 8); ctx.lineTo(s / 4, -s / 8 + i * s / 8);
+          }
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+      update() {
+        this.x += this.vx; this.y += this.vy; this.rotation += this.rv;
+        if (this.x < -this.size) this.x = width + this.size;
+        if (this.x > width + this.size) this.x = -this.size;
+        if (this.y < -this.size) this.y = height + this.size;
+        if (this.y > height + this.size) this.y = -this.size;
+      }
+    }
+
+    let blobs = [];
+    let particles = [];
+    let illustrations = [];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      blobs = Array.from({ length: 6 }, () => new Blob());
+      particles = Array.from({ length: 30 }, () => new Particle());
+      illustrations = Array.from({ length: 9 }, (_, i) => new Illustration(i % 8));
+    }
+
+    function animate() {
+      if (!isVisible) { requestAnimationFrame(animate); return; }
+      mouseX += (targetMouseX - mouseX) * 0.05;
+      mouseY += (targetMouseY - mouseY) * 0.05;
+      ctx.clearRect(0, 0, width, height);
+      blobs.forEach(b => { b.update(); b.draw(); });
+      illustrations.forEach(i => { i.update(); i.draw(); });
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', resize);
+    window.addEventListener('mousemove', (e) => {
+      targetMouseX = e.clientX;
+      targetMouseY = e.clientY;
+    });
+    document.addEventListener('visibilitychange', () => {
+      isVisible = document.visibilityState === 'visible';
+    });
+
+    resize();
+    animate();
+
+    // ── Application Logic ───────────────────────────────────
+    const BASE = "http://127.0.0.1:8000";
+
+    // ── Upload PDF ──────────────────────────────────────────
+    document.getElementById("pdf-input").addEventListener("change", async function () {
+      const file = this.files[0];
+      if (!file) return;
+
+      document.getElementById("upload-label").innerHTML = `<strong>${file.name}</strong> — uploading...`;
+      const status = document.getElementById("upload-status");
+      status.style.display = "none";
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await fetch(`${BASE}/upload`, { method: "POST", body: formData });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById("upload-label").innerHTML = `<strong>${file.name}</strong>`;
+          status.textContent = "Recipe book loaded";
+          status.style.display = "inline-block";
+        } else {
+          status.textContent = data.detail || "Upload failed";
+          status.style.display = "inline-block";
+        }
+      } catch {
+        status.textContent = "Could not reach backend";
+        status.style.display = "inline-block";
+      }
+    });
+
+    // ── Find Dishes ─────────────────────────────────────────
+    async function findDishes() {
+      const ingredients = document.getElementById("ingredients").value.trim();
+      if (!ingredients) return;
+
+      const btn = document.getElementById("find-btn");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Finding dishes...';
+
+      document.getElementById("dishes-section").style.display = "none";
+      document.getElementById("dishes-list").innerHTML = "";
+
+      try {
+        const res = await fetch(`${BASE}/dishes`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ingredients })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.dishes && Array.isArray(data.dishes)) {
+          // Frontend validation: ensure dish objects are valid
+          const validDishes = data.dishes.filter(d =>
+            d &&
+            typeof d.dish === 'string' &&
+            typeof d.match_percentage === 'number' &&
+            Array.isArray(d.missing)
+          );
+
+          if (validDishes.length > 0) {
+            document.getElementById("dishes-count").textContent = `${validDishes.length} dish${validDishes.length === 1 ? '' : 'es'} you can make`;
+            validDishes.forEach((dish, i) => renderDish(dish, i));
+            document.getElementById("dishes-section").style.display = "block";
+          } else {
+            document.getElementById("dishes-count").textContent = "No valid dishes found.";
+            document.getElementById("dishes-section").style.display = "block";
+          }
+        } else {
+          document.getElementById("dishes-count").textContent = data.detail || "No dishes found.";
+          document.getElementById("dishes-section").style.display = "block";
+        }
+      } catch {
+        document.getElementById("dishes-count").textContent = "Could not reach backend.";
+        document.getElementById("dishes-section").style.display = "block";
+      }
+
+      btn.disabled = false;
+      btn.textContent = "Find Dishes";
+    }
+
+    // ── Render Dish Item ────────────────────────────────────
+    function renderDish(dish, index) {
+      const container = document.getElementById("dishes-list");
+
+      const item = document.createElement("div");
+      item.className = "dish-item";
+
+      const safeName = dish.dish.replace(/'/g, "\\'");
+
+      item.innerHTML = `
+        <div class="dish-header" id="header-${index}" onclick="toggleRecipe('${safeName}', ${index})">
+          <span class="dish-name">${dish.dish}</span>
+          <span class="chevron"></span>
+        </div>
+        <div class="dish-body" id="body-${index}">
+          <p class="loading-text" style="line-height:1.6; color:var(--on-surface);">Loading recipe...</p>
+        </div>
+      `;
+
+      container.appendChild(item);
+    }
+
+    // ── Toggle Recipe ───────────────────────────────────────
+    const loaded = {};
+
+    async function toggleRecipe(name, index) {
+      const header = document.getElementById(`header-${index}`);
+      const body = document.getElementById(`body-${index}`);
+
+      const isOpen = body.classList.contains("open");
+
+      // close all
+      document.querySelectorAll(".dish-body").forEach(b => b.classList.remove("open"));
+      document.querySelectorAll(".dish-header").forEach(h => h.classList.remove("open"));
+
+      if (isOpen) return;
+
+      header.classList.add("open");
+      body.classList.add("open");
+
+      if (loaded[index]) return;
+
+      try {
+        const res = await fetch(`${BASE}/recipe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dish_name: name })
+        });
+        const data = await res.json();
+        body.querySelector("p").textContent = res.ok ? data.recipe : (data.detail || "Failed to load recipe.");
+        loaded[index] = true;
+      } catch {
+        body.querySelector("p").textContent = "Could not reach backend.";
+      }
+    }
+  </script>
+
+</body>
+
+</html>
