@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>whatsCooking AI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --orange:      #e07b2a;
+      --orange-dark: #c4671e;
+      --orange-light:#f5e0cc;
+      --black:       #111110;
+      --dark:        #1c1b19;
+      --surface:     #f7f4f0;
+      --border:      #e0d8ce;
+      --text:        #1c1b19;
+      --muted:       #7a746c;
+      --white:       #ffffff;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--surface);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      background: var(--black);
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    nav .logo {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: 0.5px;
+    }
+
+    nav .logo span {
+      color: var(--orange);
+    }
+
+    nav .tag {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    /* MAIN LAYOUT */
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+
+    /* HERO */
+    .hero {
+      margin-bottom: 48px;
+    }
+
+    .hero h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--black);
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+
+    .hero h1 span {
+      color: var(--orange);
+    }
+
+    .hero p {
+      font-size: 1rem;
+      color: var(--muted);
+    }
+
+    /* CARD */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    /* UPLOAD */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--orange);
+      background: var(--orange-light);
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .upload-zone .upload-text {
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .upload-zone .upload-text strong {
+      color: var(--orange);
+    }
+
+    .status-pill {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background: var(--orange-light);
+      color: var(--orange-dark);
+      display: none;
+    }
+
+    /* TEXTAREA */
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--white);
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus {
+      border-color: var(--orange);
+    }
+
+    textarea::placeholder {
+      color: #bbb;
+    }
+
+    /* BUTTON */
+    button {
+      background: var(--orange);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      padding: 13px 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    button:hover { background: var(--orange-dark); }
+    button:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+    /* DISH LIST */
+    #dishes-section { display: none; }
+
+    .dish-item {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .dish-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      cursor: pointer;
+      background: var(--white);
+      transition: background 0.15s;
+      user-select: none;
+    }
+
+    .dish-header:hover { background: var(--surface); }
+
+    .dish-header.open { background: var(--orange-light); }
+
+    .dish-name {
+      font-size: 0.97rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .dish-header.open .dish-name { color: var(--orange-dark); }
+
+    .chevron {
+      width: 16px;
+      height: 16px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .dish-header.open .chevron {
+      transform: rotate(-135deg);
+      border-color: var(--orange);
+    }
+
+    .dish-body {
+      display: none;
+      padding: 18px;
+      border-top: 1px solid var(--border);
+      background: #fdfcfb;
+    }
+
+    .dish-body.open { display: block; }
+
+    .dish-body p {
+      font-size: 0.93rem;
+      line-height: 1.75;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .loading-text {
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* DIVIDER */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 32px 0;
+    }
+
+    /* SPINNER */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--white);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="logo">whats<span>Cooking</span> AI</div>
+    <div class="tag">AbsolAI</div>
+  </nav>
+
+  <main>
+
+    <div class="hero">
+      <h1>Cook smarter with<br>what you <span>already have.</span></h1>
+      <p>Upload your recipe book, enter your ingredients, and find out what you can make.</p>
+    </div>
+
+    <!-- STEP 1: Upload -->
+    <div class="card">
+      <div class="card-title">Step 1 — Recipe Book</div>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="pdf-input" accept=".pdf" />
+        <div class="upload-text" id="upload-label">
+          <strong>Click to upload</strong> your recipe book PDF
+        </div>
+      </div>
+      <div class="status-pill" id="upload-status"></div>
+    </div>
+
+    <!-- STEP 2: Ingredients -->
+    <div class="card">
+      <div class="card-title">Step 2 — Your Ingredients</div>
+      <textarea id="ingredients" rows="3" placeholder="e.g. eggs, tomatoes, onion, garlic, olive oil..."></textarea>
+      <button id="find-btn" onclick="findDishes()">Find Dishes</button>
+    </div>
+
+    <hr />
+
+    <!-- RESULTS -->
+    <div id="dishes-section">
+      <div class="card-title" style="margin-bottom:14px;" id="dishes-count"></div>
+      <div id="dishes-list"></div>
+    </div>
+
+  </main>
+
+  <script>
+    const BASE = "http://127.0.0.1:8000";
+
+    // ── Upload PDF ──────────────────────────────────────────
+    document.getElementById("pdf-input").addEventListener("change", async function () {
+      const file = this.files[0];
+      if (!file) return;
+
+      document.getElementById("upload-label").innerHTML = `<strong>${file.name}</strong> — uploading...`;
+      const status = document.getElementById("upload-status");
+      status.style.display = "none";
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await fetch(`${BASE}/upload`, { method: "POST", body: formData });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById("upload-label").innerHTML = `<strong>${file.name}</strong>`;
+          status.textContent = "Recipe book loaded";
+          status.style.display = "inline-block";
+        } else {
+          status.textContent = data.detail || "Upload failed";
+          status.style.display = "inline-block";
+        }
+      } catch {
+        status.textContent = "Could not reach backend";
+        status.style.display = "inline-block";
+      }
+    });
+
+    // ── Find Dishes ─────────────────────────────────────────
+    async function findDishes() {
+      const ingredients = document.getElementById("ingredients").value.trim();
+      if (!ingredients) return;
+
+      const btn = document.getElementById("find-btn");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Finding dishes...';
+
+      document.getElementById("dishes-section").style.display = "none";
+      document.getElementById("dishes-list").innerHTML = "";
+
+      try {
+        const res = await fetch(`${BASE}/dishes`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ingredients })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.dishes.length > 0) {
+          document.getElementById("dishes-count").textContent = `${data.dishes.length} dishes you can make`;
+          data.dishes.forEach((dish, i) => renderDish(dish, i));
+          document.getElementById("dishes-section").style.display = "block";
+        } else {
+          document.getElementById("dishes-count").textContent = data.detail || "No dishes found.";
+          document.getElementById("dishes-section").style.display = "block";
+        }
+      } catch {
+        document.getElementById("dishes-count").textContent = "Could not reach backend.";
+        document.getElementById("dishes-section").style.display = "block";
+      }
+
+      btn.disabled = false;
+      btn.textContent = "Find Dishes";
+    }
+
+    // ── Render Dish Item ────────────────────────────────────
+    function renderDish(name, index) {
+      const container = document.getElementById("dishes-list");
+
+      const item = document.createElement("div");
+      item.className = "dish-item";
+
+      item.innerHTML = `
+        <div class="dish-header" id="header-${index}" onclick="toggleRecipe('${name.replace(/'/g,"\\'")}', ${index})">
+          <span class="dish-name">${name}</span>
+          <span class="chevron"></span>
+        </div>
+        <div class="dish-body" id="body-${index}">
+          <p class="loading-text">Loading recipe...</p>
+        </div>
+      `;
+
+      container.appendChild(item);
+    }
+
+    // ── Toggle Recipe ───────────────────────────────────────
+    const loaded = {};
+
+    async function toggleRecipe(name, index) {
+      const header = document.getElementById(`header-${index}`);
+      const body   = document.getElementById(`body-${index}`);
+
+      const isOpen = body.classList.contains("open");
+
+      // close all
+      document.querySelectorAll(".dish-body").forEach(b => b.classList.remove("open"));
+      document.querySelectorAll(".dish-header").forEach(h => h.classList.remove("open"));
+
+      if (isOpen) return;
+
+      header.classList.add("open");
+      body.classList.add("open");
+
+      if (loaded[index]) return;
+
+      try {
+        const res = await fetch(`${BASE}/recipe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dish_name: name })
+        });
+        const data = await res.json();
+        body.querySelector("p").textContent = res.ok ? data.recipe : (data.detail || "Failed to load recipe.");
+        loaded[index] = true;
+      } catch {
+        body.querySelector("p").textContent = "Could not reach backend.";
+      }
+    }
+  </script>
+
+</body>
+</html>
