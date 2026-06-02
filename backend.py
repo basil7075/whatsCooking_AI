@@ -1,7 +1,11 @@
 import os
 import shutil
+import webbrowser
+import threading
+import time
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from ai import load_pdf, find_dishes, get_recipe
 
@@ -13,6 +17,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return FileResponse("index.html")
+
+@app.on_event("startup")
+async def startup_event():
+    try:
+        url = "http://127.0.0.1:8000"
+        def _open():
+            time.sleep(0.5)
+            webbrowser.open_new_tab(url)
+        threading.Thread(target=_open, daemon=True).start()
+        print(f"Frontend available at {url}")
+    except Exception as e:
+        print("Could not open browser:", e)
 
 class IngredientsRequest(BaseModel):
     ingredients: str
@@ -46,10 +66,14 @@ def dishes(request: IngredientsRequest):
         result = find_dishes(request.ingredients)
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-    return {"dishes": result}
+    response_data = {"dishes": result}
+    print(f"[DEBUG] Final API response for /dishes: {response_data}")
+    return response_data
 
 
 @app.post("/recipe")
