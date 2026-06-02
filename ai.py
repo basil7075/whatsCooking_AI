@@ -1,5 +1,6 @@
 import os
 import re
+import json
 from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Settings
 from llama_index.readers.file import PDFReader
@@ -8,9 +9,14 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 load_dotenv()
 
+# Settings.llm = Groq(
+#     model="",
+#     api_key=os.getenv("GROQ_API_KEY")
+# )
+
 Settings.llm = Groq(
     model="llama-3.1-8b-instant",
-    api_key=os.getenv("GROQ_API_KEY")
+    api_key=os.getenv("NEW_GROQ_API_KEY")
 )
 
 Settings.embed_model = HuggingFaceEmbedding(
@@ -32,17 +38,14 @@ def load_pdf(file_path: str) -> str:
 def _normalize_ingredient_token(s: str) -> str:
     s = s.lower()
     s = re.sub(r"\(.*?\)", "", s)
-    s = re.sub(r"[\d\u00BC-\u00BE\u2150-\u215E/.]+", " ", s)  # remove fractions/numbers
+    s = re.sub(r"[\d\u00BC-\u00BE\u2150-\u215E/.]+", " ", s)
     s = re.sub(r"[^a-z\s]", " ", s)
-    units = {"cup","cups","tablespoon","tablespoons","tbsp","teaspoon","teaspoons","tsp","grams","gram","g","kg","ounce","ounces","oz","ml","l","pinch","clove","cloves","slice","slices","package","can","cans","bunch"}
+    units = {"cup","cups","tablespoon","tablespoons","tbsp","teaspoon","teaspoons",
+             "tsp","grams","gram","g","kg","ounce","ounces","oz","ml","l",
+             "pinch","clove","cloves","slice","slices","package","can","cans","bunch"}
     stopwords = {"of","and","or","to","the","a","an","for","with","in","on","into","at","by","as","into","from"}
-    parts = [p.strip() for p in re.split(r"[,\-\\/]", s) if p.strip()]
-    for p in parts:
-        words = [w for w in p.split() if w and w not in units and w not in stopwords]
-        if not words:
-            continue
-        return " ".join(words)
-    return s.strip()
+    words = [w for w in s.split() if w not in units and w not in stopwords]
+    return " ".join(words).strip()
 
 
 def _extract_ingredients_from_text(text: str) -> list:
@@ -99,78 +102,74 @@ def _normalize_user_ingredients(s: str) -> set:
 
 
 def find_dishes(ingredients: str) -> list[dict]:
-    """Find dishes from the uploaded recipe book and compute missing ingredients.
-
-    Steps:
-    1. Query the index for candidate dishes (grounded in the cookbook).
-    2. For each dish, retrieve the recipe text from the index.
-    3. Extract ingredient names heuristically from the recipe text.
-    4. Compute missing items and match percentage against user's ingredients.
-    """
     if query_engine is None:
         raise RuntimeError("No recipe book loaded. Upload a PDF first.")
     if not ingredients.strip():
         raise ValueError("Ingredients cannot be empty.")
 
-    # 1) get candidate dish names (up to 8)
     prompt_list = f"""
-Using ONLY the provided recipe book, list up to 8 dish NAMES (no numbers, no extra text) that can be made primarily with these ingredients: {ingredients}
-Respond with one dish name per line. If none, output NO_DISHES_FOUND.
+Using ONLY the provided recipe book, list up to 8 dishes that can be made primarily with these ingredients: {ingredients}
+
+You MUST output your response in strict JSON format. Do NOT include any reasoning, explanation, or chain-of-thought.
+Return ONLY a JSON object with a single key "dishes", containing a list of objects with:
+- "name": dish name (string)
+- "ingredients": list of ingredient strings (just names, no quantities)
+
+Example:
+{{
+  "dishes": [
+    {{
+      "name": "Tomato Pasta",
+      "ingredients": ["tomato", "pasta", "garlic", "olive oil"]
+    }}
+  ]
+}}
 """
     response = query_engine.query(prompt_list)
     raw = str(response).strip()
-    if not raw or raw.upper().startswith("NO_DISHES_FOUND"):
-        return []
 
-    names = []
-    for line in raw.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        # accept numbered or plain lines
-        m = re.match(r"^\d+[\.)]?\s*(.+)$", line)
-        if m:
-            names.append(m.group(1).strip())
-        else:
-            names.append(line)
-        if len(names) >= 8:
-            break
+    raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
+    raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw, flags=re.MULTILINE).strip()
+
+    try:
+        parsed = json.loads(raw)
+        dishes_raw = parsed.get("dishes", [])
+        print(f"[DEBUG] Parsed JSON response: {parsed}")
+    except json.JSONDecodeError as e:
+        print(f"[ERROR] Failed to parse JSON: {e}")
+        print(f"[ERROR] Raw response was: {raw}")
+        raise ValueError("Failed to parse dish suggestions from AI. Please try again.")
+
+    reasoning_phrases = ["okay, let's see", "the user wants me", "looking at page", "first, looking at", "wait, the context"]
 
     user_set = _normalize_user_ingredients(ingredients)
-
     results = []
-    for name in names:
-        # 2) retrieve recipe text for this dish
-        try:
-            recipe_text = get_recipe(name)
-        except Exception:
-            recipe_text = ''
-        # detect missing recipe
-        if not recipe_text or re.search(r"no recipe for|no recipe available|not found in the provided context", recipe_text, re.IGNORECASE):
-            results.append({"name": name, "match": 0, "missing": []})
+
+    for dish in dishes_raw[:8]:
+        name = dish.get("name", "")
+        if not name or len(name) > 100:
             continue
-        # 3) extract ingredients
-        recipe_ings = _extract_ingredients_from_text(recipe_text)
-        recipe_ings_set = set(recipe_ings)
-        # 4) compute missing
+        if any(phrase in name.lower() for phrase in reasoning_phrases):
+            continue
+
+        recipe_ings_set = set(_normalize_ingredient_token(i) for i in dish.get("ingredients", []) if i.strip())
+        recipe_ings_set = {i for i in recipe_ings_set if len(i) > 1}
+
         if not recipe_ings_set:
-            match_pct = 0
-            missing = []
-        else:
-            # compare normalized tokens with some fuzzy matching
-            have = set()
-            for ui in user_set:
-                # exact or partial match
-                for ri in recipe_ings_set:
-                    if ui in ri or ri in ui or ri.split()[-1] == ui.split()[-1]:
-                        have.add(ri)
-            common = have
-            missing = sorted(list(recipe_ings_set - common))
-            match_pct = round(100 * (len(common) / len(recipe_ings_set)))
-        results.append({"name": name, "match": match_pct, "missing": missing})
+            results.append({"dish": name, "match_percentage": 0, "missing": []})
+            continue
+
+        have = set()
+        for ui in user_set:
+            for ri in recipe_ings_set:
+                if ui in ri or ri in ui or ri.split()[-1] == ui.split()[-1]:
+                    have.add(ri)
+
+        missing = sorted(list(recipe_ings_set - have))
+        match_pct = round(100 * (len(have) / len(recipe_ings_set)))
+        results.append({"dish": name, "match_percentage": match_pct, "missing": missing})
 
     return results
-
 
 def get_recipe(dish_name: str) -> str:
     if query_engine is None:
