@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>whatsCooking AI</title>
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
   <style>
     * {
       margin: 0;
@@ -23,6 +25,7 @@
       --border: #e0d8ce;
       --white: #ffffff;
       --radius: 12px;
+      --radius-sm: 8px;
     }
 
     body {
@@ -62,13 +65,6 @@
 
     nav .logo span {
       color: var(--primary);
-    }
-
-    nav .tag {
-      font-size: 1rem;
-      color: var(--text-muted);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
     }
 
     main {
@@ -173,27 +169,115 @@
       display: none;
     }
 
-    textarea {
+    /* ── Pantry System ── */
+    .pantry-input-container {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .pantry-field-wrapper {
+      position: relative;
+      flex-grow: 1;
+    }
+
+    .pantry-field-wrapper .material-symbols-outlined {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 20px;
+    }
+
+    .pantry-input {
       width: 100%;
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
+      border-radius: var(--radius-sm);
+      padding: 14px 16px 14px 48px;
       font-size: 1rem;
       font-family: inherit;
       color: var(--on-surface);
       background: rgba(255, 255, 255, 0.9);
-      resize: none;
       outline: none;
       transition: all 0.2s;
-      margin-bottom: 16px;
     }
 
-    textarea:focus {
+    .pantry-input:focus {
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(224, 123, 42, 0.1);
     }
 
-    button {
+    .add-btn {
+      background: var(--primary);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0 32px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .add-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(224, 123, 42, 0.2);
+    }
+
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+      min-height: 20px;
+    }
+
+    .ingredient-tag {
+      background: #f4dfcb;
+      color: #723600;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      animation: tagPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes tagPop {
+      0% {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .ingredient-tag .remove-tag {
+      cursor: pointer;
+      font-size: 16px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+      user-select: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .ingredient-tag .remove-tag:hover {
+      opacity: 1;
+    }
+
+    .find-btn {
       background: var(--primary);
       color: var(--white);
       border: none;
@@ -205,20 +289,20 @@
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       width: 100%;
-      font-family: 'Hanken Grotesk', sans-serif;
+      font-family: inherit;
     }
 
-    button:hover {
+    .find-btn:hover {
       background: var(--primary-dark);
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(224, 123, 42, 0.3);
     }
 
-    button:active {
+    .find-btn:active {
       transform: scale(0.98);
     }
 
-    button:disabled {
+    .find-btn:disabled {
       background: var(--border);
       color: var(--text-muted);
       cursor: not-allowed;
@@ -307,6 +391,13 @@
       font-style: italic;
     }
 
+    nav .tag {
+      font-size: 1rem;
+      color: var(--text-muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
     .spinner {
       display: inline-block;
       width: 14px;
@@ -337,6 +428,15 @@
       .card {
         padding: 20px;
       }
+
+      .pantry-input-container {
+        flex-direction: column;
+      }
+
+      .add-btn {
+        padding: 14px;
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -347,7 +447,7 @@
 
   <nav>
     <span></span>
-    <div class="tag">AbsolAI</div>
+    <div class="tag">Absol-AI</div>
   </nav>
 
   <main>
@@ -369,11 +469,19 @@
       <div class="status-pill" id="upload-status"></div>
     </div>
 
-    <!-- STEP 2: Ingredients -->
+    <!-- STEP 2: Ingredients (pantry tag system) -->
     <div class="card">
-      <div class="card-title">Step 2 — Your Ingredients</div>
-      <textarea id="ingredients" rows="3" placeholder="e.g. eggs, tomatoes, onion, garlic, olive oil..."></textarea>
-      <button id="find-btn" onclick="findDishes()">Find Dishes</button>
+      <div class="card-title">Step 2 — Your Pantry</div>
+      <div class="pantry-input-container">
+        <div class="pantry-field-wrapper">
+          <span class="material-symbols-outlined">search</span>
+          <input class="pantry-input" id="ingredient-input" placeholder="What's in your fridge? (e.g. Avocado, Tomato)"
+            type="text" />
+        </div>
+        <button class="add-btn" id="add-btn">Add</button>
+      </div>
+      <div class="tags-container" id="tags-container"></div>
+      <button class="find-btn" id="find-btn">Find Dishes</button>
     </div>
 
     <hr />
@@ -396,10 +504,10 @@
     let isVisible = true;
 
     const colors = [
-      'rgba(230, 126, 34, 0.2)', // Warm Orange
-      'rgba(245, 176, 65, 0.2)', // Soft Amber
-      'rgba(106, 176, 76, 0.15)', // Herb Green
-      'rgba(162, 155, 254, 0.12)' // Soft Violet
+      'rgba(230, 126, 34, 0.2)',
+      'rgba(245, 176, 65, 0.2)',
+      'rgba(106, 176, 76, 0.15)',
+      'rgba(162, 155, 254, 0.12)'
     ];
 
     class Blob {
@@ -463,7 +571,7 @@
 
     class Illustration {
       constructor(type) {
-        this.type = type; // 0: Avocado, 1: Tomato, 2: Carrot, 3: Chili, 4: Basil, 5: Garlic, 6: Spoon/Knife, 7: Recipe Card
+        this.type = type;
         this.init();
       }
       init() {
@@ -487,39 +595,38 @@
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         const s = this.size;
-
-        if (this.type === 0) { // Avocado
+        if (this.type === 0) {
           ctx.moveTo(0, -s / 2.5);
           ctx.bezierCurveTo(s / 3, -s / 2.5, s / 2, s / 4, 0, s / 2);
           ctx.bezierCurveTo(-s / 2, s / 4, -s / 3, -s / 2.5, 0, -s / 2.5);
           ctx.moveTo(0, s / 6); ctx.arc(0, s / 6, s / 6, 0, Math.PI * 2);
-        } else if (this.type === 1) { // Tomato
+        } else if (this.type === 1) {
           ctx.arc(0, 0, s / 3.5, 0, Math.PI * 2);
           ctx.moveTo(0, -s / 3.5); ctx.lineTo(0, -s / 2.5);
           ctx.lineTo(s / 10, -s / 2.2); ctx.moveTo(0, -s / 2.5); ctx.lineTo(-s / 10, -s / 2.2);
-        } else if (this.type === 2) { // Carrot
+        } else if (this.type === 2) {
           ctx.moveTo(-s / 8, -s / 2); ctx.lineTo(s / 8, -s / 2); ctx.lineTo(0, s / 2); ctx.closePath();
           for (let i = 0; i < 3; i++) {
             ctx.moveTo(-s / 10, -s / 4 + i * s / 4); ctx.lineTo(s / 10, -s / 4.5 + i * s / 4);
           }
-        } else if (this.type === 3) { // Chili
+        } else if (this.type === 3) {
           ctx.moveTo(0, -s / 2); ctx.quadraticCurveTo(s / 2.5, 0, 0, s / 2);
           ctx.quadraticCurveTo(s / 3, 0, -s / 10, -s / 2); ctx.closePath();
-        } else if (this.type === 4) { // Basil
+        } else if (this.type === 4) {
           for (let i = 0; i < 3; i++) {
             ctx.save(); ctx.rotate(i * (Math.PI * 2 / 3));
             ctx.moveTo(0, 0); ctx.bezierCurveTo(s / 4, -s / 4, s / 4, -s / 2, 0, -s / 2);
             ctx.bezierCurveTo(-s / 4, -s / 2, -s / 4, -s / 4, 0, 0); ctx.restore();
           }
-        } else if (this.type === 5) { // Garlic
+        } else if (this.type === 5) {
           ctx.moveTo(0, s / 2.5); ctx.bezierCurveTo(s / 2, s / 2.5, s / 2.5, -s / 5, 0, -s / 2);
           ctx.bezierCurveTo(-s / 2.5, -s / 5, -s / 2, s / 2.5, 0, s / 2.5);
           ctx.moveTo(0, s / 2.5); ctx.lineTo(0, -s / 2);
-        } else if (this.type === 6) { // Knife
+        } else if (this.type === 6) {
           ctx.rect(-s / 20, s / 4, s / 10, s / 4);
           ctx.moveTo(-s / 20, s / 4); ctx.lineTo(-s / 20, -s / 2);
           ctx.bezierCurveTo(s / 5, -s / 2, s / 5, s / 4, -s / 20, s / 4);
-        } else { // Recipe Card
+        } else {
           ctx.rect(-s / 3, -s / 4, s / 1.5, s / 2);
           for (let i = 0; i < 3; i++) {
             ctx.moveTo(-s / 4, -s / 8 + i * s / 8); ctx.lineTo(s / 4, -s / 8 + i * s / 8);
@@ -537,9 +644,7 @@
       }
     }
 
-    let blobs = [];
-    let particles = [];
-    let illustrations = [];
+    let blobs = [], particles = [], illustrations = [];
 
     function resize() {
       width = canvas.width = window.innerWidth;
@@ -571,6 +676,49 @@
 
     resize();
     animate();
+
+    // ── Pantry Tag System ───────────────────────────────────
+    const ingredientInput = document.getElementById('ingredient-input');
+    const tagsContainer = document.getElementById('tags-container');
+    let pantryList = [];
+
+    ingredientInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') addIngredient();
+    });
+
+    document.getElementById('add-btn').addEventListener('click', addIngredient);
+
+    function addIngredient() {
+      const val = ingredientInput.value.trim();
+      if (val && !pantryList.includes(val)) {
+        pantryList.push(val);
+        renderTags();
+        ingredientInput.value = '';
+      }
+      ingredientInput.focus();
+    }
+
+    function removeIngredient(ingredient) {
+      pantryList = pantryList.filter(item => item !== ingredient);
+      renderTags();
+    }
+
+    function renderTags() {
+      tagsContainer.innerHTML = '';
+      pantryList.forEach(item => {
+        const tag = document.createElement('div');
+        tag.className = 'ingredient-tag';
+        const label = document.createElement('span');
+        label.textContent = item;
+        const removeBtn = document.createElement('span');
+        removeBtn.className = 'material-symbols-outlined remove-tag';
+        removeBtn.textContent = 'close';
+        removeBtn.addEventListener('click', () => removeIngredient(item));
+        tag.appendChild(label);
+        tag.appendChild(removeBtn);
+        tagsContainer.appendChild(tag);
+      });
+    }
 
     // ── Application Logic ───────────────────────────────────
     const BASE = "http://127.0.0.1:8000";
@@ -605,8 +753,10 @@
     });
 
     // ── Find Dishes ─────────────────────────────────────────
+    document.getElementById('find-btn').addEventListener('click', findDishes);
+
     async function findDishes() {
-      const ingredients = document.getElementById("ingredients").value.trim();
+      const ingredients = pantryList.join(', ');
       if (!ingredients) return;
 
       const btn = document.getElementById("find-btn");
@@ -625,7 +775,6 @@
         const data = await res.json();
 
         if (res.ok && data.dishes && Array.isArray(data.dishes)) {
-          // Frontend validation: ensure dish objects are valid
           const validDishes = data.dishes.filter(d =>
             d &&
             typeof d.dish === 'string' &&
@@ -657,22 +806,22 @@
     // ── Render Dish Item ────────────────────────────────────
     function renderDish(dish, index) {
       const container = document.getElementById("dishes-list");
-
       const item = document.createElement("div");
       item.className = "dish-item";
 
-      const safeName = dish.dish.replace(/'/g, "\\'");
+      const header = document.createElement("div");
+      header.className = "dish-header";
+      header.id = `header-${index}`;
+      header.innerHTML = `<span class="dish-name">${dish.dish}</span><span class="chevron"></span>`;
+      header.addEventListener('click', () => toggleRecipe(dish.dish, index));
 
-      item.innerHTML = `
-        <div class="dish-header" id="header-${index}" onclick="toggleRecipe('${safeName}', ${index})">
-          <span class="dish-name">${dish.dish}</span>
-          <span class="chevron"></span>
-        </div>
-        <div class="dish-body" id="body-${index}">
-          <p class="loading-text" style="line-height:1.6; color:var(--on-surface);">Loading recipe...</p>
-        </div>
-      `;
+      const body = document.createElement("div");
+      body.className = "dish-body";
+      body.id = `body-${index}`;
+      body.innerHTML = `<p class="loading-text">Loading recipe...</p>`;
 
+      item.appendChild(header);
+      item.appendChild(body);
       container.appendChild(item);
     }
 
@@ -682,10 +831,8 @@
     async function toggleRecipe(name, index) {
       const header = document.getElementById(`header-${index}`);
       const body = document.getElementById(`body-${index}`);
-
       const isOpen = body.classList.contains("open");
 
-      // close all
       document.querySelectorAll(".dish-body").forEach(b => b.classList.remove("open"));
       document.querySelectorAll(".dish-header").forEach(h => h.classList.remove("open"));
 
