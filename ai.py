@@ -52,6 +52,7 @@ def _normalize_user_ingredients(s: str) -> set:
         p = p.strip()
         if not p:
             continue
+        # take first 3 words
         words = [w for w in p.split() if w]
         if not words:
             continue
@@ -92,6 +93,14 @@ Example:
     try:
         parsed = json.loads(raw)
         dishes_raw = parsed.get("dishes", [])
+        seen = set()
+        unique_dishes = []
+        for d in dishes_raw:
+            name = d.get("name", "").strip()
+            if name and name.lower() not in seen:
+                seen.add(name.lower())
+                unique_dishes.append(d)
+        dishes_raw = unique_dishes
         print(f"[DEBUG] Parsed JSON response: {parsed}")
     except json.JSONDecodeError as e:
         print(f"[ERROR] Failed to parse JSON: {e}")
@@ -139,6 +148,12 @@ def get_recipe(dish_name: str) -> str:
 From the recipe book, provide the complete recipe for: {dish_name}
 Include ingredients with quantities and step-by-step cooking instructions.
 Only use information from the recipe book.
+Convert ALL measurements to SI units:
+- Temperature in Celsius (°C)
+- Weight in grams (g) or kilograms (kg)
+- Volume in millilitres (ml) or litres (l)
+- Length/size in centimetres (cm)
+If the book uses Fahrenheit, cups, ounces, or inches — convert them. Show only SI values.
 """
     response = query_engine.query(prompt)
     return str(response).strip()
