@@ -9,14 +9,9 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 load_dotenv()
 
-# Settings.llm = Groq(
-#     model="",
-#     api_key=os.getenv("GROQ_API_KEY")
-# )
-
 Settings.llm = Groq(
     model="llama-3.1-8b-instant",
-    api_key=os.getenv("NEW_GROQ_API_KEY")
+    api_key=os.getenv("GROQ_API_KEY")
 )
 
 Settings.embed_model = HuggingFaceEmbedding(
@@ -57,7 +52,6 @@ def _normalize_user_ingredients(s: str) -> set:
         p = p.strip()
         if not p:
             continue
-        # take first 3 words
         words = [w for w in p.split() if w]
         if not words:
             continue
