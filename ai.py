@@ -44,19 +44,14 @@ def _normalize_ingredient_token(s: str) -> str:
 
 
 def _normalize_user_ingredients(s: str) -> set:
-    parts = re.split(r"[,;]\s*", s.lower())
+    parts = re.split(r"[,;]\s*", s)
     normalized = set()
     for p in parts:
-        p = re.sub(r"\(.*?\)", "", p)
-        p = re.sub(r"[^a-z\s]", " ", p)
-        p = p.strip()
-        if not p:
-            continue
-        # take first 3 words
-        words = [w for w in p.split() if w]
-        if not words:
-            continue
-        normalized.add(" ".join(words[:3]))
+        token = _normalize_ingredient_token(p)
+        if token:
+            words = token.split()[:3]
+            if words:
+                normalized.add(" ".join(words))
     return normalized
 
 
