@@ -1,4 +1,3 @@
-```markdown
 # WhatsCooking AI 🍳
 
 An AI-powered recipe assistant that lets you upload your own recipe book (PDF) and discover what you can cook based on ingredients you have on hand.
@@ -72,4 +71,3 @@ The app opens in your browser automatically at `http://127.0.0.1:8000`.
 - Only searches within your uploaded recipe book — no hallucinated recipes
 - All measurements are auto-converted to SI units
 - Requires an internet connection for the HuggingFace embedding model on first run
-```
