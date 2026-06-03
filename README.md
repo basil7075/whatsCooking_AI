@@ -1,5 +1,3 @@
-Here's a clean README for your project:
-
 ```markdown
 # WhatsCooking AI 🍳
 
