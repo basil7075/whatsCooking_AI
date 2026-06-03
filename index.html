@@ -8,6 +8,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
     rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
   <style>
     * {
       margin: 0;
@@ -19,7 +21,6 @@
       --primary: #e07b2a;
       --primary-dark: #c4671e;
       --surface: #fdf8f5;
-      --surface-container: #f2ede9;
       --on-surface: #1c1b19;
       --text-muted: #7a746c;
       --border: #e0d8ce;
@@ -44,6 +45,7 @@
       height: 100%;
       z-index: -1;
       pointer-events: none;
+      filter: blur(60px);
     }
 
     nav {
@@ -56,16 +58,6 @@
       z-index: 10;
     }
 
-    nav .logo {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--white);
-      letter-spacing: 0.5px;
-    }
-
-    nav .logo span {
-      color: var(--primary);
-    }
 
     main {
       max-width: 900px;
@@ -382,7 +374,7 @@
       font-size: 0.93rem;
       line-height: 1.75;
       color: var(--on-surface);
-      white-space: pre-wrap;
+      
     }
 
     .loading-text {
@@ -532,10 +524,8 @@
         gradient.addColorStop(0, this.color);
         gradient.addColorStop(1, 'rgba(253, 248, 245, 0)');
         ctx.fillStyle = gradient;
-        ctx.filter = 'blur(100px)';
         ctx.arc(this.x + px, this.y + py, this.radius, 0, Math.PI * 2);
         ctx.fill();
-        ctx.filter = 'none';
       }
       update() {
         this.x += this.vx; this.y += this.vy;
@@ -665,7 +655,11 @@
       requestAnimationFrame(animate);
     }
 
-    window.addEventListener('resize', resize);
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 150);
+    });
     window.addEventListener('mousemove', (e) => {
       targetMouseX = e.clientX;
       targetMouseY = e.clientY;
@@ -765,6 +759,7 @@
 
       document.getElementById("dishes-section").style.display = "none";
       document.getElementById("dishes-list").innerHTML = "";
+      Object.keys(loaded).forEach(k => delete loaded[k]);
 
       try {
         const res = await fetch(`${BASE}/dishes`, {
@@ -850,7 +845,11 @@
           body: JSON.stringify({ dish_name: name })
         });
         const data = await res.json();
-        body.querySelector("p").textContent = res.ok ? data.recipe : (data.detail || "Failed to load recipe.");
+        if (res.ok) {
+          body.querySelector("p").innerHTML = DOMPurify.sanitize(marked.parse(data.recipe));
+        } else {
+          body.querySelector("p").textContent = data.detail || "Failed to load recipe.";
+        }
         loaded[index] = true;
       } catch {
         body.querySelector("p").textContent = "Could not reach backend.";
